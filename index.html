@@ -3,630 +3,541 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>打砖块 · Breakout Pro</title>
+<title>六万 · 一个关于选择的故事</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     min-height: 100vh;
     display: flex;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
-    background: radial-gradient(circle at 50% 0%, #1e293b, #0f172a 70%);
-    font-family: system-ui, -apple-system, sans-serif;
-    color: #e2e8f0;
-    user-select: none;
-    overflow: hidden;
+    background: #0f0d15;
+    font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: #e8e3f0;
+    padding: 16px;
   }
-  h1 {
-    font-size: 18px;
-    font-weight: 600;
-    letter-spacing: 3px;
-    margin-bottom: 10px;
-    color: #94a3b8;
-  }
-  #wrap {
+  #game {
+    width: 100%;
+    max-width: 520px;
+    background: linear-gradient(160deg, #1a1626, #14111d);
+    border-radius: 20px;
+    padding: 32px 28px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
     position: relative;
-    border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 0 60px rgba(56,189,248,0.15), 0 20px 40px rgba(0,0,0,0.5);
   }
-  canvas { display: block; background: #0b1120; }
-
-  #overlay {
+  #game::before {
+    content: '';
     position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background: rgba(11,17,32,0.88);
-    backdrop-filter: blur(4px);
-    gap: 12px;
-    padding: 20px;
-    text-align: center;
-    transition: opacity .25s;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(244,114,182,0.18), transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
   }
-  #overlay.hidden { opacity: 0; pointer-events: none; }
-  #overlay h2 { font-size: 24px; color: #38bdf8; }
-  #overlay p { font-size: 13px; color: #94a3b8; line-height: 1.6; }
-  button {
-    margin-top: 8px;
-    padding: 10px 28px;
+
+  .chapter {
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: #a78bfa;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+  }
+  .scene {
+    font-size: 17px;
+    line-height: 1.85;
+    color: #d8d2e8;
+    margin-bottom: 26px;
+    min-height: 130px;
+    white-space: pre-wrap;
+  }
+  .scene .em { color: #f472b6; }
+  .scene .warn { color: #fbbf24; }
+
+  .choices { display: flex; flex-direction: column; gap: 10px; }
+
+  button.choice {
+    text-align: left;
+    padding: 14px 18px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: #e8e3f0;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all .18s;
+    font-family: inherit;
+  }
+  button.choice:hover {
+    background: rgba(167,139,250,0.13);
+    border-color: rgba(167,139,250,0.5);
+    transform: translateX(4px);
+  }
+  button.choice:active { transform: translateX(2px) scale(0.99); }
+
+  .stats {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 22px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    flex-wrap: wrap;
+  }
+  .stat { flex: 1; min-width: 90px; }
+  .stat .label {
+    font-size: 11px;
+    color: #7c7491;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+  }
+  .stat .val {
     font-size: 15px;
     font-weight: 600;
-    color: #0b1120;
-    background: linear-gradient(135deg, #38bdf8, #818cf8);
-    border: none;
+    color: #e8e3f0;
+  }
+  .bar {
+    height: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+    margin-top: 6px;
+    overflow: hidden;
+  }
+  .bar > i {
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+    transition: width .4s ease;
+  }
+  .bar.love > i { background: linear-gradient(90deg, #f472b6, #ec4899); }
+  .bar.trust > i { background: linear-gradient(90deg, #38bdf8, #6366f1); }
+  .bar.money > i { background: linear-gradient(90deg, #4ade80, #22c55e); }
+
+  .ending-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #f472b6, #a78bfa);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .ending-text {
+    font-size: 15px;
+    line-height: 1.9;
+    color: #c4bdd6;
+    margin-bottom: 24px;
+    white-space: pre-wrap;
+  }
+  .ending-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    font-size: 11px;
+    letter-spacing: 1px;
     border-radius: 999px;
+    background: rgba(167,139,250,0.15);
+    color: #a78bfa;
+    margin-bottom: 14px;
+  }
+
+  .restart {
+    width: 100%;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f0d15;
+    background: linear-gradient(135deg, #f472b6, #a78bfa);
+    border: none;
+    border-radius: 12px;
     cursor: pointer;
+    font-family: inherit;
     transition: transform .15s, box-shadow .15s;
   }
-  button:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(56,189,248,0.4); }
-  button:active { transform: translateY(0); }
+  .restart:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(167,139,250,0.35);
+  }
 
-  #hint {
-    margin-top: 12px;
-    font-size: 12px;
-    color: #64748b;
+  .fade { animation: fade .45s ease; }
+  @keyframes fade {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 </style>
 </head>
 <body>
 
-<h1>BREAKOUT PRO</h1>
-
-<div id="wrap">
-  <canvas id="game" width="480" height="600"></canvas>
-  <div id="overlay">
-    <h2 id="title">准备开始</h2>
-    <p id="desc">移动鼠标 / 手指控制挡板</p>
-    <button id="btn">开始游戏</button>
-  </div>
-</div>
-
-<p id="hint">鼠标 / 触屏控制 · 点击或空格发球 · 空格暂停</p>
+<div id="game"></div>
 
 <script>
 (() => {
-  const canvas = document.getElementById('game');
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
+  const game = document.getElementById('game');
 
-  const overlay = document.getElementById('overlay');
-  const titleEl = document.getElementById('title');
-  const descEl  = document.getElementById('desc');
-  const btn     = document.getElementById('btn');
-
-  // ---------- 基础配置 ----------
-  const PADDLE_BASE_W = 90;
-  const PADDLE_H = 12;
-  const PADDLE_Y = H - 40;
-  const BALL_R = 7;
-  const BALL_SPEED_BASE = 5.2;
-  const BRICK_W = 48, BRICK_H = 20, BRICK_GAP = 6;
-  const BRICK_TOP = 70, BRICK_LEFT = 26;
-  const COLS = 8;
-
-  const COLORS = ['#f472b6', '#fb923c', '#facc15', '#4ade80', '#38bdf8', '#a78bfa'];
-
-  // 道具类型
-  const POWER_TYPES = {
-    EXPAND:  { color: '#4ade80', label: 'W', name: '加宽挡板' },
-    MULTI:   { color: '#facc15', label: '3', name: '三球齐发' },
-    SLOW:    { color: '#38bdf8', label: 'S', name: '减速' },
-    LIFE:    { color: '#f472b6', label: '+', name: '加一条命' },
+  // ---------- 状态 ----------
+  let state = {
+    love: 70,      // 感情
+    trust: 50,     // 双方家庭信任
+    money: 30,     // 存款（万元）
+    node: 'start'
   };
-  const POWER_KEYS = Object.keys(POWER_TYPES);
-  const POWER_CHANCE = 0.18; // 每块砖掉落道具概率
 
-  // 关卡布局：数字代表颜色索引，'.' 代表空
-  const LEVELS = [
-    {
-      name: '第一关 · 入门',
-      speed: 1.0,
-      rows: [
-        '11111111',
-        '22222222',
-        '33333333',
+  // ---------- 剧情节点 ----------
+  const story = {
+
+    start: {
+      chapter: '第一章 · 六万',
+      scene: `小豪和林小诚在一起三年。
+
+她妈妈开口了：<span class="em">彩礼六万，一分不能少。</span>
+
+小豪手里有三十万存款，是准备买房首付的。
+六万，给得起。但这笔钱一旦出去，首付就不够了。
+
+林小诚坐在小豪旁边，低着头，没说话。`,
+      choices: [
+        { text: '当晚和林小诚认真聊：这六万，我们俩一起想办法', effect: { love: +8, trust: +5 }, next: 'talk_together' },
+        { text: '先答应下来，钱的事自己扛，不让她操心', effect: { love: +3, trust: -3 }, next: 'carry_alone' },
+        { text: '觉得六万太多，想找她妈妈再谈谈', effect: { love: -3, trust: -5 }, next: 'bargain' }
       ]
     },
-    {
-      name: '第二关 · 交错',
-      speed: 1.08,
-      rows: [
-        '.1.1.1.1',
-        '2.2.2.2.',
-        '.3.3.3.3',
-        '4.4.4.4.',
+
+    talk_together: {
+      chapter: '第二章 · 两个人',
+      scene: `小豪把账本摊在桌上，和林小诚一笔一笔算。
+
+她沉默很久，说：<span class="em">"我妈不是真要这六万，她是怕我嫁过去受委屈。"</span>
+
+小豪忽然明白，这件事的核心不是钱，是<span class="warn">安全感</span>。`,
+      choices: [
+        { text: '一起去见林小诚妈妈，把买房的计划、还款的安排都说清楚', effect: { love: +10, trust: +15, money: -2 }, next: 'meet_mom_honest' },
+        { text: '先凑六万给过去，把眼前这关过了再说', effect: { love: +5, trust: +5, money: -6 }, next: 'pay_first' },
+        { text: '让林小诚自己去跟她妈妈沟通，小豪等结果', effect: { love: -8, trust: -5 }, next: 'push_to_girl' }
       ]
     },
-    {
-      name: '第三关 · 金字塔',
-      speed: 1.16,
-      rows: [
-        '...44...',
-        '..3333..',
-        '.222222.',
-        '11111111',
+
+    carry_alone: {
+      chapter: '第二章 · 一个人扛',
+      scene: `小豪没告诉林小诚，偷偷把六万转了过去。
+
+她后来知道了，眼眶红了：<span class="em">"你为什么不跟我说？"</span>
+
+小豪说不想让她为难。她说：<span class="warn">"可我们是要过一辈子的人。"</span>`,
+      choices: [
+        { text: '道歉，把后面的计划全部摊开和她商量', effect: { love: +7, trust: +8 }, next: 'meet_mom_honest' },
+        { text: '坚持"男人就该扛"，继续一个人处理', effect: { love: -10, trust: -6 }, next: 'alone_end' },
+        { text: '反过来怪她不理解自己的压力', effect: { love: -15, trust: -10 }, next: 'blame_end' }
       ]
     },
-    {
-      name: '第四关 · 城墙',
-      speed: 1.24,
-      rows: [
-        '55555555',
-        '4......4',
-        '4.3333.4',
-        '4.2..2.4',
-        '44444444',
+
+    bargain: {
+      chapter: '第二章 · 讨价还价',
+      scene: `小豪托林小诚带话，说六万能不能少点。
+
+她妈妈当场变了脸：<span class="warn">"我女儿在你眼里就值这个价？"</span>
+
+林小诚夹在中间，两头受气。`,
+      choices: [
+        { text: '意识到失礼，亲自上门道歉并把话说清楚', effect: { love: +6, trust: +10, money: -1 }, next: 'meet_mom_honest' },
+        { text: '觉得对方不讲理，态度也硬起来', effect: { love: -12, trust: -15 }, next: 'fight_end' },
+        { text: '让林小诚去说服她妈妈降低要求', effect: { love: -10, trust: -8 }, next: 'push_to_girl' }
       ]
     },
-    {
-      name: '第五关 · 终局',
-      speed: 1.35,
-      rows: [
-        '1.1.1.1.',
-        '.2.2.2.2',
-        '3.3.3.3.',
-        '.4.4.4.4',
-        '5.5.5.5.',
-        '.6.6.6.6',
+
+    meet_mom_honest: {
+      chapter: '第三章 · 当面',
+      scene: `小豪带着林小诚，拎着水果，坐在她家客厅。
+
+小豪把买房的进度、每月的还款、彩礼的安排，一条一条讲给她妈妈听。
+
+她妈妈没说话，喝了口茶：<span class="em">"你是个实在孩子。但我就一个女儿。"</span>`,
+      choices: [
+        { text: '坦诚说：六万我现在给，但房子会晚一年，希望您理解', effect: { love: +8, trust: +12, money: -6 }, next: 'honest_end' },
+        { text: '承诺六万照给，房子也照买，咬牙两件事一起上', effect: { love: +5, trust: +8, money: -10 }, next: 'overload' },
+        { text: '提出分期给彩礼，先给三万，剩下的一年内补齐', effect: { love: +3, trust: +5, money: -3 }, next: 'installment' }
       ]
     },
-  ];
 
-  // ---------- 游戏状态 ----------
-  let paddle, balls, bricks, powerUps, particles;
-  let score, lives, levelIndex, state;
-  let paddleW;              // 当前挡板宽度（可被道具改变）
-  let slowUntil;            // 减速道具生效截止时间戳
+    pay_first: {
+      chapter: '第三章 · 先过关',
+      scene: `六万转过去了。她妈妈脸色缓和了些。
 
-  // state: 'ready' | 'playing' | 'paused' | 'levelclear' | 'over' | 'win'
+但买房的首付缺口，摆在了小豪和林小诚面前。
 
-  // ---------- 初始化 ----------
-  function initLevel(idx) {
-    levelIndex = idx;
-    const level = LEVELS[idx];
-    paddleW = PADDLE_BASE_W;
-    paddle = { x: (W - paddleW) / 2, y: PADDLE_Y, w: paddleW, h: PADDLE_H };
-    bricks = [];
-    powerUps = [];
-    particles = [];
-    slowUntil = 0;
+她问：<span class="em">"房子怎么办？"</span>`,
+      choices: [
+        { text: '坦白说清：先租房，两年内一定买', effect: { love: +6, trust: +6 }, next: 'rent_end' },
+        { text: '借钱凑首付，先把房子拿下', effect: { love: +2, trust: +3, money: -8 }, next: 'debt_end' },
+        { text: '回避这个问题，说"以后再说"', effect: { love: -8, trust: -6 }, next: 'avoid_end' }
+      ]
+    },
 
-    const rowCount = level.rows.length;
-    // 让砖块整体水平居中
-    const totalW = COLS * BRICK_W + (COLS - 1) * BRICK_GAP;
-    const left = (W - totalW) / 2;
+    push_to_girl: {
+      chapter: '第三章 · 她一个人',
+      scene: `林小诚一个人回了娘家。
 
-    for (let r = 0; r < rowCount; r++) {
-      const row = level.rows[r];
-      for (let c = 0; c < row.length; c++) {
-        const ch = row[c];
-        if (ch === '.') continue;
-        const colorIdx = parseInt(ch, 10) - 1;
-        bricks.push({
-          x: left + c * (BRICK_W + BRICK_GAP),
-          y: BRICK_TOP + r * (BRICK_H + BRICK_GAP),
-          w: BRICK_W, h: BRICK_H,
-          color: COLORS[colorIdx % COLORS.length],
-          alive: true
-        });
-      }
+她妈妈说了很多难听的话，她一句都没还嘴。
+
+回来的时候，她眼睛是肿的。她只说了一句：<span class="warn">"我好累。"</span>`,
+      choices: [
+        { text: '抱住她，说"是我不好，这些本该我们一起面对"', effect: { love: +10, trust: +5 }, next: 'meet_mom_honest' },
+        { text: '问她"你妈到底怎么说"', effect: { love: -8, trust: -3 }, next: 'cold_end' },
+        { text: '沉默，不知道该说什么', effect: { love: -6, trust: -3 }, next: 'cold_end' }
+      ]
+    },
+
+    overload: {
+      chapter: '第四章 · 绷紧的弦',
+      scene: `彩礼给了，房子也定了，首付借了一部分。
+
+每个月还款压得小豪喘不过气。林小诚开始加班，两人见面的时间越来越少。
+
+有一天她说：<span class="em">"我们已经很久没有好好说过话了。"</span>`,
+      choices: [
+        { text: '停下来，把还款计划重新排一遍，留出生活空间', effect: { love: +8, trust: +5, money: +2 }, next: 'balance_end' },
+        { text: '继续硬撑，觉得熬过这段就好了', effect: { love: -10, trust: -5 }, next: 'burnout_end' },
+        { text: '把压力发泄在林小诚身上', effect: { love: -18, trust: -10 }, next: 'blame_end' }
+      ]
+    },
+
+    installment: {
+      chapter: '第四章 · 分期',
+      scene: `她妈妈勉强同意了分期。
+
+先给三万，剩下的一年内补齐。小豪松了口气，但心里知道，这件事没真正过去。
+
+林小诚问：<span class="em">"剩下那三万，你有把握吗？"</span>`,
+      choices: [
+        { text: '老实说：没十足把握，但我会想办法，也会告诉你进度', effect: { love: +9, trust: +8 }, next: 'honest_end' },
+        { text: '拍胸脯说"放心，肯定没问题"', effect: { love: +2, trust: -2 }, next: 'overpromise_end' },
+        { text: '反问她"你是不是也不信我"', effect: { love: -10, trust: -5 }, next: 'cold_end' }
+      ]
+    },
+
+    // ---------- 结局 ----------
+    honest_end: {
+      ending: true,
+      tag: '结局 · 一起面对',
+      title: '六万，不是终点',
+      text: `彩礼给了，房子晚了一年，但小豪和林小诚一起把每一笔账都算清楚了。
+
+她妈妈后来跟邻居说："那孩子实在，我放心。"
+
+三年后他们搬进新房那天，林小诚说：
+"幸好当时我们没把彼此当成对手。"
+
+真正拆散一对人的，从来不是六万块钱，
+而是遇到六万块钱时，两个人站到了对立面。`
+    },
+
+    rent_end: {
+      ending: true,
+      tag: '结局 · 现实但坦诚',
+      title: '先租房，也可以',
+      text: `他们租了个小两居，把买房的计划写在了冰箱贴上。
+
+她妈妈嘴上还有意见，但看到他们每个月都在往目标走，慢慢也就不说了。
+
+日子不轻松，但他们知道自己在往哪去。
+
+坦诚，比承诺更让人安心。`
+    },
+
+    debt_end: {
+      ending: true,
+      tag: '结局 · 负重前行',
+      title: '房子有了，弦也紧了',
+      text: `房子买下了，但每个月的还款像一根绷紧的弦。
+
+他们很少吵架，但也很少说话。
+
+有一天林小诚说："我们是不是把日子过成了任务？"
+
+小豪愣住了。他意识到，房子是家的一部分，
+但不是家的全部。`
+    },
+
+    avoid_end: {
+      ending: true,
+      tag: '结局 · 回避',
+      title: '问题不会自己消失',
+      text: `"以后再说"说了很多次，房子的事一直悬着。
+
+她妈妈的意见越来越大，林小诚的沉默越来越长。
+
+终于有一天，她说："我不是等不起房子，我是等不起一个不肯跟我一起想办法的人。"
+
+有些问题，回避一次没事，回避一百次就成了结局。`
+    },
+
+    cold_end: {
+      ending: true,
+      tag: '结局 · 沉默',
+      title: '累，是攒出来的',
+      text: `她没有大吵大闹，只是越来越沉默。
+
+小豪想解释，但每次开口都变成了辩解。
+
+后来她提出分开。小豪说："就因为六万块钱？"
+
+她摇头："不是因为六万，是因为这六万里，我一直是一个人。"`
+    },
+
+    fight_end: {
+      ending: true,
+      tag: '结局 · 对立',
+      title: '赢了道理，输了人',
+      text: `小豪和她的家人彻底闹僵了。
+
+林小诚夹在中间，最后选择站在了她妈妈那边。
+
+小豪不服气，觉得自己没错。
+
+很多年后他才明白：在那场争执里，他争的是对错，
+她想要的是他和她站在一起。`
+    },
+
+    blame_end: {
+      ending: true,
+      tag: '结局 · 迁怒',
+      title: '压力不该由她承担',
+      text: `小豪把所有的不顺都怪到了林小诚头上。
+
+她一开始忍着，后来开始反驳，再后来就不说话了。
+
+分开那天她说："我不怕穷，我怕你把穷怪到我身上。"
+
+小豪这才发现，他弄丢的不是一段感情，
+是一个本来愿意和他一起扛的人。`
+    },
+
+    burnout_end: {
+      ending: true,
+      tag: '结局 · 耗尽',
+      title: '熬过去，但没熬回来',
+      text: `小豪确实熬过了最难的那两年。
+
+但林小诚在某个普通的晚上说："我们分开吧。"
+
+小豪说："最难的时候都过来了，现在不是好了吗？"
+
+她说："是好了，可我已经不想再等了。"
+
+有些感情不是被大事击垮的，是被一件件小事磨没的。`
+    },
+
+    overpromise_end: {
+      ending: true,
+      tag: '结局 · 承诺',
+      title: '承诺说出口容易，兑现难',
+      text: `小豪拍着胸脯保证，但剩下的三万一直没凑齐。
+
+她妈妈旧事重提，林小诚替他挡了几次话，后来说不动了。
+
+小豪说："再给我一点时间。"
+
+她说："我不是不信你，我是不知道还要等多久。"
+
+承诺不是用来安抚当下的，是用来兑现未来的。`
+    },
+
+    balance_end: {
+      ending: true,
+      tag: '结局 · 平衡',
+      title: '日子是过出来的',
+      text: `他们重新排了还款计划，砍掉了一些不必要的开销，
+也留出了每周一次"什么都不谈"的晚上。
+
+房子晚了一年，但他们的关系没有晚。
+
+她妈妈说："你们俩，像过日子的样子。"
+
+六万块钱是个坎，但他们是跨过去，不是绕过去。`
+    },
+
+    alone_end: {
+      ending: true,
+      tag: '结局 · 独自承担',
+      title: '一个人扛，两个人远',
+      text: `小豪把所有事都自己处理了。
+
+林小诚一开始感激，后来觉得被排除在外，再后来就不再问了。
+
+小豪说："我这不是都为了你吗？"
+
+她说："可我要的不是被安排，是被需要。"
+
+爱不是替对方挡掉所有风雨，
+而是让她知道，风雨里有她一个位置。`
     }
+  };
 
-    resetBall();
-  }
+  // ---------- 渲染 ----------
+  function render() {
+    const node = story[state.node];
 
-  function initGame() {
-    score = 0;
-    lives = 3;
-    initLevel(0);
-  }
-
-  function resetBall() {
-    paddle.w = paddleW;
-    paddle.x = Math.max(0, Math.min(W - paddle.w, paddle.x));
-    balls = [{
-      x: paddle.x + paddle.w / 2,
-      y: paddle.y - BALL_R - 2,
-      dx: 0, dy: 0,
-      launched: false
-    }];
-  }
-
-  function launchBalls() {
-    let launchedAny = false;
-    for (const b of balls) {
-      if (b.launched) continue;
-      const level = LEVELS[levelIndex];
-      const speed = BALL_SPEED_BASE * level.speed;
-      const angle = (Math.random() * 0.5 - 0.25) - Math.PI / 2;
-      b.dx = Math.cos(angle) * speed;
-      b.dy = Math.sin(angle) * speed;
-      b.launched = true;
-      launchedAny = true;
-    }
-    return launchedAny;
-  }
-
-  // ---------- 道具 ----------
-  function maybeDropPower(brick) {
-    if (Math.random() > POWER_CHANCE) return;
-    const type = POWER_KEYS[Math.floor(Math.random() * POWER_KEYS.length)];
-    powerUps.push({
-      x: brick.x + brick.w / 2,
-      y: brick.y + brick.h / 2,
-      r: 11,
-      vy: 2.2,
-      type
-    });
-  }
-
-  function applyPower(type) {
-    if (type === 'EXPAND') {
-      paddleW = Math.min(PADDLE_BASE_W * 1.6, paddleW + 35);
-      paddle.w = paddleW;
-    } else if (type === 'MULTI') {
-      // 把每个已发球的球分裂成三个方向
-      const newBalls = [];
-      for (const b of balls) {
-        if (!b.launched) continue;
-        const speed = Math.hypot(b.dx, b.dy);
-        const baseAngle = Math.atan2(b.dy, b.dx);
-        for (const offset of [-0.4, 0, 0.4]) {
-          newBalls.push({
-            x: b.x, y: b.y,
-            dx: Math.cos(baseAngle + offset) * speed,
-            dy: Math.sin(baseAngle + offset) * speed,
-            launched: true
-          });
-        }
-      }
-      if (newBalls.length) balls = newBalls;
-      else launchBalls();
-    } else if (type === 'SLOW') {
-      slowUntil = performance.now() + 6000;
-    } else if (type === 'LIFE') {
-      lives = Math.min(5, lives + 1);
-    }
-  }
-
-  // ---------- 粒子特效 ----------
-  function spawnParticles(x, y, color) {
-    for (let i = 0; i < 8; i++) {
-      const a = Math.random() * Math.PI * 2;
-      const s = 1 + Math.random() * 3;
-      particles.push({
-        x, y,
-        dx: Math.cos(a) * s,
-        dy: Math.sin(a) * s,
-        life: 1,
-        color
-      });
-    }
-  }
-
-  // ---------- 输入 ----------
-  function movePaddle(clientX) {
-    const rect = canvas.getBoundingClientRect();
-    const scale = W / rect.width;
-    let x = (clientX - rect.left) * scale - paddle.w / 2;
-    paddle.x = Math.max(0, Math.min(W - paddle.w, x));
-    if (!balls.some(b => b.launched)) {
-      balls[0].x = paddle.x + paddle.w / 2;
-    }
-  }
-
-  canvas.addEventListener('mousemove', e => movePaddle(e.clientX));
-  canvas.addEventListener('touchmove', e => {
-    e.preventDefault();
-    movePaddle(e.touches[0].clientX);
-  }, { passive: false });
-  canvas.addEventListener('touchstart', e => {
-    e.preventDefault();
-    movePaddle(e.touches[0].clientX);
-    if (state === 'playing') launchBalls();
-  }, { passive: false });
-  canvas.addEventListener('click', () => {
-    if (state === 'playing') launchBalls();
-  });
-
-  document.addEventListener('keydown', e => {
-    if (e.code === 'Space') {
-      e.preventDefault();
-      if (state === 'playing') {
-        state = 'paused';
-        showOverlay('已暂停', '按空格或点击按钮继续', '继续');
-      } else if (state === 'paused') {
-        state = 'playing';
-        hideOverlay();
-      }
-    }
-    if (state === 'playing') {
-      if (e.code === 'ArrowLeft')  paddle.x = Math.max(0, paddle.x - 40);
-      if (e.code === 'ArrowRight') paddle.x = Math.min(W - paddle.w, paddle.x + 40);
-    }
-  });
-
-  btn.addEventListener('click', () => {
-    if (state === 'over' || state === 'win') {
-      initGame();
-      state = 'playing';
-      hideOverlay();
-    } else if (state === 'levelclear') {
-      if (levelIndex + 1 >= LEVELS.length) {
-        state = 'win';
-        showOverlay('🏆 全部通关！', `最终得分：${score}`, '再玩一次');
-      } else {
-        initLevel(levelIndex + 1);
-        state = 'playing';
-        hideOverlay();
-      }
-    } else if (state === 'paused') {
-      state = 'playing';
-      hideOverlay();
-    } else if (state === 'ready') {
-      initGame();
-      state = 'playing';
-      hideOverlay();
-    }
-  });
-
-  function showOverlay(t, d, b) {
-    titleEl.textContent = t;
-    descEl.innerHTML = d;
-    btn.textContent = b;
-    overlay.classList.remove('hidden');
-  }
-  function hideOverlay() { overlay.classList.add('hidden'); }
-
-  // ---------- 更新 ----------
-  function update(now) {
-    if (state !== 'playing') {
-      // 暂停时也更新粒子，让画面不死板
-      updateParticles();
+    if (node.ending) {
+      game.innerHTML = `
+        <div class="fade">
+          <div class="ending-tag">${node.tag}</div>
+          <div class="ending-title">${node.title}</div>
+          <div class="ending-text">${node.text}</div>
+          <div class="stats">
+            ${statBar('感情', state.love, 'love')}
+            ${statBar('信任', state.trust, 'trust')}
+            ${statBar('存款', state.money * 2, 'money', state.money + ' 万')}
+          </div>
+          <button class="restart" onclick="location.reload()">重新开始</button>
+        </div>
+      `;
       return;
     }
 
-    const slowFactor = now < slowUntil ? 0.6 : 1.0;
+    game.innerHTML = `
+      <div class="fade">
+        <div class="chapter">${node.chapter}</div>
+        <div class="stats">
+          ${statBar('感情', state.love, 'love')}
+          ${statBar('信任', state.trust, 'trust')}
+          ${statBar('存款', state.money * 2, 'money', state.money + ' 万')}
+        </div>
+        <div class="scene">${node.scene}</div>
+        <div class="choices">
+          ${node.choices.map((c, i) =>
+            `<button class="choice" data-idx="${i}">${c.text}</button>`
+          ).join('')}
+        </div>
+      </div>
+    `;
 
-    // 挡板跟随（当所有球都未发射时）
-    if (!balls.some(b => b.launched)) {
-      balls[0].x = paddle.x + paddle.w / 2;
-      balls[0].y = paddle.y - BALL_R - 2;
-    }
-
-    // 球运动
-    for (let i = balls.length - 1; i >= 0; i--) {
-      const ball = balls[i];
-      if (!ball.launched) continue;
-
-      ball.x += ball.dx * slowFactor;
-      ball.y += ball.dy * slowFactor;
-
-      // 墙壁
-      if (ball.x - BALL_R < 0) { ball.x = BALL_R; ball.dx *= -1; }
-      if (ball.x + BALL_R > W) { ball.x = W - BALL_R; ball.dx *= -1; }
-      if (ball.y - BALL_R < 0) { ball.y = BALL_R; ball.dy *= -1; }
-
-      // 挡板
-      if (ball.dy > 0 &&
-          ball.y + BALL_R >= paddle.y &&
-          ball.y - BALL_R <= paddle.y + paddle.h &&
-          ball.x >= paddle.x && ball.x <= paddle.x + paddle.w) {
-        ball.y = paddle.y - BALL_R;
-        const hit = (ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
-        const angle = hit * (Math.PI / 3);
-        const speed = Math.min(Math.hypot(ball.dx, ball.dy) * 1.015, 11);
-        ball.dx = Math.sin(angle) * speed;
-        ball.dy = -Math.cos(angle) * speed;
-      }
-
-      // 砖块
-      for (const b of bricks) {
-        if (!b.alive) continue;
-        if (ball.x + BALL_R > b.x && ball.x - BALL_R < b.x + b.w &&
-            ball.y + BALL_R > b.y && ball.y - BALL_R < b.y + b.h) {
-          b.alive = false;
-          score += 10;
-          spawnParticles(ball.x, ball.y, b.color);
-          maybeDropPower(b);
-
-          const overlapX = Math.min(ball.x + BALL_R - b.x, b.x + b.w - (ball.x - BALL_R));
-          const overlapY = Math.min(ball.y + BALL_R - b.y, b.y + b.h - (ball.y - BALL_R));
-          if (overlapX < overlapY) ball.dx *= -1;
-          else ball.dy *= -1;
-          break;
-        }
-      }
-
-      // 球掉落
-      if (ball.y - BALL_R > H) {
-        balls.splice(i, 1);
-      }
-    }
-
-    // 所有球都没了 → 掉一条命
-    if (balls.length === 0) {
-      lives--;
-      if (lives <= 0) {
-        state = 'over';
-        showOverlay('游戏结束', `得分：${score}<br>到达第 ${levelIndex + 1} 关`, '再玩一次');
-      } else {
-        resetBall();
-      }
-    }
-
-    // 道具下落
-    for (let i = powerUps.length - 1; i >= 0; i--) {
-      const p = powerUps[i];
-      p.y += p.vy;
-      // 接到
-      if (p.y + p.r >= paddle.y &&
-          p.y - p.r <= paddle.y + paddle.h &&
-          p.x >= paddle.x && p.x <= paddle.x + paddle.w) {
-        applyPower(p.type);
-        spawnParticles(p.x, p.y, POWER_TYPES[p.type].color);
-        powerUps.splice(i, 1);
-        continue;
-      }
-      if (p.y - p.r > H) powerUps.splice(i, 1);
-    }
-
-    updateParticles();
-
-    // 过关
-    if (bricks.every(b => !b.alive)) {
-      if (levelIndex + 1 >= LEVELS.length) {
-        state = 'win';
-        showOverlay('🏆 全部通关！', `最终得分：${score}`, '再玩一次');
-      } else {
-        state = 'levelclear';
-        showOverlay(
-          `第 ${levelIndex + 1} 关通过！`,
-          `当前得分：${score}<br>下一关：${LEVELS[levelIndex + 1].name}`,
-          '进入下一关'
-        );
-      }
-    }
+    game.querySelectorAll('.choice').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const choice = node.choices[+btn.dataset.idx];
+        applyEffect(choice.effect);
+        state.node = choice.next;
+        render();
+      });
+    });
   }
 
-  function updateParticles() {
-    for (let i = particles.length - 1; i >= 0; i--) {
-      const p = particles[i];
-      p.x += p.dx;
-      p.y += p.dy;
-      p.dy += 0.15;
-      p.life -= 0.03;
-      if (p.life <= 0) particles.splice(i, 1);
-    }
+  function statBar(label, value, cls, display) {
+    const v = Math.max(0, Math.min(100, value));
+    return `
+      <div class="stat">
+        <div class="label">${label}</div>
+        <div class="val">${display !== undefined ? display : v}</div>
+        <div class="bar ${cls}"><i style="width:${v}%"></i></div>
+      </div>
+    `;
   }
 
-  // ---------- 渲染 ----------
-  function draw(now) {
-    ctx.clearRect(0, 0, W, H);
-
-    // 背景网格
-    ctx.strokeStyle = 'rgba(56,189,248,0.05)';
-    ctx.lineWidth = 1;
-    for (let x = 0; x < W; x += 40) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-    }
-    for (let y = 0; y < H; y += 40) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-    }
-
-    // 砖块
-    for (const b of bricks) {
-      if (!b.alive) continue;
-      ctx.fillStyle = b.color;
-      ctx.shadowColor = b.color;
-      ctx.shadowBlur = 10;
-      ctx.beginPath();
-      ctx.roundRect(b.x, b.y, b.w, b.h, 4);
-      ctx.fill();
-    }
-    ctx.shadowBlur = 0;
-
-    // 道具
-    for (const p of powerUps) {
-      const info = POWER_TYPES[p.type];
-      ctx.fillStyle = info.color;
-      ctx.shadowColor = info.color;
-      ctx.shadowBlur = 14;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-
-      ctx.fillStyle = '#0b1120';
-      ctx.font = '700 12px system-ui, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(info.label, p.x, p.y + 1);
-      ctx.textBaseline = 'alphabetic';
-    }
-
-    // 粒子
-    for (const p of particles) {
-      ctx.globalAlpha = Math.max(0, p.life);
-      ctx.fillStyle = p.color;
-      ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
-    }
-    ctx.globalAlpha = 1;
-
-    // 挡板
-    const grad = ctx.createLinearGradient(paddle.x, 0, paddle.x + paddle.w, 0);
-    grad.addColorStop(0, '#38bdf8');
-    grad.addColorStop(1, '#818cf8');
-    ctx.fillStyle = grad;
-    ctx.shadowColor = '#38bdf8';
-    ctx.shadowBlur = 16;
-    ctx.beginPath();
-    ctx.roundRect(paddle.x, paddle.y, paddle.w, paddle.h, 6);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-
-    // 球
-    for (const ball of balls) {
-      ctx.fillStyle = '#fff';
-      ctx.shadowColor = '#fff';
-      ctx.shadowBlur = 14;
-      ctx.beginPath();
-      ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.shadowBlur = 0;
-
-    // HUD
-    ctx.fillStyle = '#64748b';
-    ctx.font = '600 13px system-ui, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText(`SCORE ${score}`, 16, 26);
-
-    ctx.textAlign = 'center';
-    ctx.fillText(`第 ${levelIndex + 1} / ${LEVELS.length} 关`, W / 2, 26);
-
-    ctx.textAlign = 'right';
-    ctx.fillText(`♥ ${lives}`, W - 16, 26);
-
-    // 减速提示
-    if (now < slowUntil) {
-      ctx.fillStyle = 'rgba(56,189,248,0.9)';
-      ctx.textAlign = 'center';
-      ctx.font = '600 12px system-ui, sans-serif';
-      const remain = ((slowUntil - now) / 1000).toFixed(1);
-      ctx.fillText(`减速中 ${remain}s`, W / 2, 44);
-    }
+  function applyEffect(effect) {
+    if (!effect) return;
+    if (effect.love)  state.love  = Math.max(0, Math.min(100, state.love + effect.love));
+    if (effect.trust) state.trust = Math.max(0, Math.min(100, state.trust + effect.trust));
+    if (effect.money) state.money = Math.max(0, state.money + effect.money);
   }
 
-  // roundRect polyfill
-  if (!CanvasRenderingContext2D.prototype.roundRect) {
-    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
-      this.moveTo(x + r, y);
-      this.arcTo(x + w, y, x + w, y + h, r);
-      this.arcTo(x + w, y + h, x, y + h, r);
-      this.arcTo(x, y + h, x, y, r);
-      this.arcTo(x, y, x + w, y, r);
-      this.closePath();
-      return this;
-    };
-  }
-
-  // ---------- 主循环 ----------
-  function loop(now) {
-    update(now || performance.now());
-    draw(now || performance.now());
-    requestAnimationFrame(loop);
-  }
-
-  // 启动
-  initGame();
-  state = 'ready';
-  showOverlay('准备开始', '移动鼠标 / 手指控制挡板<br>打光所有砖块即可过关', '开始游戏');
-  requestAnimationFrame(loop);
+  render();
 })();
 </script>
 </body>
